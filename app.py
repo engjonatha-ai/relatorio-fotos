@@ -5,9 +5,13 @@ from docx import Document
 from docx.shared import Cm
 import pillow_heif
 
+from jarvis import jarvis_bp
+
 pillow_heif.register_heif_opener()
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'chave-de-desenvolvimento-troque-em-producao')
+app.register_blueprint(jarvis_bp)
 
 @app.route('/')
 def index():
@@ -17,6 +21,7 @@ def index():
         <input type="file" name="fotos" multiple>
         <button type="submit">Gerar Relatório</button>
     </form>
+    <p><a href="/jarvis">Falar com o assistente virtual</a></p>
     '''
 
 @app.route('/gerar', methods=['POST'])
