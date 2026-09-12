@@ -87,4 +87,6 @@ def gerar():
 
     return send_file("relatorio.docx", as_attachment=True)
 
-app.run(host='0.0.0.0', port=10000)
+if __name__ == '__main__':
+    porta = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=porta)
