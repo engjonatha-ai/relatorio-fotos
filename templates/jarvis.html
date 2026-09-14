@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J.A.R.V.I.S.</title>
+<style>
+  :root {
+    --azul: #4fd8ff;
+    --azul-escuro: #0a2a3a;
+    --fundo: #050b12;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at 50% 0%, #0d1f2d 0%, var(--fundo) 70%);
+    font-family: 'Consolas', 'Courier New', monospace;
+    color: var(--azul);
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .painel {
+    width: 100%;
+    max-width: 640px;
+    border: 1px solid rgba(79, 216, 255, 0.4);
+    border-radius: 12px;
+    box-shadow: 0 0 24px rgba(79, 216, 255, 0.25), inset 0 0 40px rgba(79, 216, 255, 0.05);
+    background: rgba(10, 22, 33, 0.6);
+    display: flex;
+    flex-direction: column;
+    height: 85vh;
+    overflow: hidden;
+  }
+  .cabecalho {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(79, 216, 255, 0.3);
+    letter-spacing: 3px;
+    font-size: 14px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--azul);
+    box-shadow: 0 0 8px var(--azul);
+    animation: pulso 1.6s infinite ease-in-out;
+    display: inline-block;
+    margin-right: 6px;
+  }
+  @keyframes pulso {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .msg {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    font-size: 14px;
+    animation: aparecer 0.2s ease-in;
+  }
+  @keyframes aparecer {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .msg.jarvis {
+    align-self: flex-start;
+    background: rgba(79, 216, 255, 0.08);
+    border: 1px solid rgba(79, 216, 255, 0.35);
+    color: var(--azul);
+  }
+  .msg.usuario {
+    align-self: flex-end;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #dff6ff;
+  }
+  form {
+    display: flex;
+    border-top: 1px solid rgba(79, 216, 255, 0.3);
+    padding: 12px;
+    gap: 8px;
+  }
+  input[type=text] {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(79, 216, 255, 0.4);
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: #dff6ff;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+  }
+  input[type=text]:focus {
+    border-color: var(--azul);
+    box-shadow: 0 0 8px rgba(79, 216, 255, 0.4);
+  }
+  button {
+    background: var(--azul);
+    border: none;
+    border-radius: 6px;
+    padding: 0 18px;
+    color: #04141d;
+    font-weight: bold;
+    letter-spacing: 1px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover { filter: brightness(1.1); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+  <div class="painel">
+    <div class="cabecalho">
+      <span><span class="status-dot"></span>J.A.R.V.I.S. — ONLINE</span>
+    </div>
+    <div class="chat" id="chat"></div>
+    <form id="form-mensagem">
+      <input type="text" id="entrada" placeholder="Digite sua resposta..." autocomplete="off" autofocus>
+      <button type="submit">Enviar</button>
+    </form>
+  </div>
+
+<script>
+  const chat = document.getElementById('chat');
+  const form = document.getElementById('form-mensagem');
+  const entrada = document.getElementById('entrada');
+
+  function adicionarMensagem(texto, autor) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + autor;
+    div.textContent = texto;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  adicionarMensagem({{ mensagem_inicial|tojson }}, 'jarvis');
+
+  form.addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const texto = entrada.value.trim();
+    if (!texto) return;
+
+    adicionarMensagem(texto, 'usuario');
+    entrada.value = '';
+    entrada.disabled = true;
+
+    try {
+      const resposta = await fetch('/jarvis/responder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensagem: texto }),
+      });
+      const dados = await resposta.json();
+      adicionarMensagem(dados.resposta, 'jarvis');
+    } catch (erro) {
+      adicionarMensagem('Houve uma falha de comunicação. Tente novamente.', 'jarvis');
+    } finally {
+      entrada.disabled = false;
+      entrada.focus();
+    }
+  });
+</script>
+</body>
+</html>
